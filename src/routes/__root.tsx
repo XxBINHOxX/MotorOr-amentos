@@ -91,14 +91,15 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-const navItems = [
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/orcamentos", label: "Orçamentos", icon: FileText },
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/motores", label: "Motores", icon: Cog },
   { to: "/servicos", label: "Serviços", icon: Wrench },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
-] as const;
+];
 
 function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
