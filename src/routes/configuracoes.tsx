@@ -28,7 +28,7 @@ function ConfigPage() {
   }, [data]);
 
   async function save() {
-    const payload = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v === "" ? null : v]));
+    const payload: any = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v === "" ? null : v]));
     const { error } = data?.id
       ? await supabase.from("configuracoes").update(payload).eq("id", data.id)
       : await supabase.from("configuracoes").insert(payload);

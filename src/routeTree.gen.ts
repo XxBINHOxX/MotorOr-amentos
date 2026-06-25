@@ -9,15 +9,39 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ServicosRouteImport } from './routes/servicos'
 import { Route as OrcamentosRouteImport } from './routes/orcamentos'
+import { Route as MotoresRouteImport } from './routes/motores'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrcamentosIndexRouteImport } from './routes/orcamentos.index'
 import { Route as OrcamentosNovoRouteImport } from './routes/orcamentos.novo'
 import { Route as OrcamentosIdRouteImport } from './routes/orcamentos.$id'
 
+const ServicosRoute = ServicosRouteImport.update({
+  id: '/servicos',
+  path: '/servicos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrcamentosRoute = OrcamentosRouteImport.update({
   id: '/orcamentos',
   path: '/orcamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotoresRoute = MotoresRouteImport.update({
+  id: '/motores',
+  path: '/motores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientesRoute = ClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -43,13 +67,21 @@ const OrcamentosIdRoute = OrcamentosIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/clientes': typeof ClientesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/motores': typeof MotoresRoute
   '/orcamentos': typeof OrcamentosRouteWithChildren
+  '/servicos': typeof ServicosRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
   '/orcamentos/novo': typeof OrcamentosNovoRoute
   '/orcamentos/': typeof OrcamentosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/clientes': typeof ClientesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/motores': typeof MotoresRoute
+  '/servicos': typeof ServicosRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
   '/orcamentos/novo': typeof OrcamentosNovoRoute
   '/orcamentos': typeof OrcamentosIndexRoute
@@ -57,7 +89,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/clientes': typeof ClientesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/motores': typeof MotoresRoute
   '/orcamentos': typeof OrcamentosRouteWithChildren
+  '/servicos': typeof ServicosRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
   '/orcamentos/novo': typeof OrcamentosNovoRoute
   '/orcamentos/': typeof OrcamentosIndexRoute
@@ -66,16 +102,32 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/clientes'
+    | '/configuracoes'
+    | '/motores'
     | '/orcamentos'
+    | '/servicos'
     | '/orcamentos/$id'
     | '/orcamentos/novo'
     | '/orcamentos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/orcamentos/$id' | '/orcamentos/novo' | '/orcamentos'
+  to:
+    | '/'
+    | '/clientes'
+    | '/configuracoes'
+    | '/motores'
+    | '/servicos'
+    | '/orcamentos/$id'
+    | '/orcamentos/novo'
+    | '/orcamentos'
   id:
     | '__root__'
     | '/'
+    | '/clientes'
+    | '/configuracoes'
+    | '/motores'
     | '/orcamentos'
+    | '/servicos'
     | '/orcamentos/$id'
     | '/orcamentos/novo'
     | '/orcamentos/'
@@ -83,16 +135,48 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ClientesRoute: typeof ClientesRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  MotoresRoute: typeof MotoresRoute
   OrcamentosRoute: typeof OrcamentosRouteWithChildren
+  ServicosRoute: typeof ServicosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/servicos': {
+      id: '/servicos'
+      path: '/servicos'
+      fullPath: '/servicos'
+      preLoaderRoute: typeof ServicosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orcamentos': {
       id: '/orcamentos'
       path: '/orcamentos'
       fullPath: '/orcamentos'
       preLoaderRoute: typeof OrcamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/motores': {
+      id: '/motores'
+      path: '/motores'
+      fullPath: '/motores'
+      preLoaderRoute: typeof MotoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clientes': {
+      id: '/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof ClientesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -144,7 +228,11 @@ const OrcamentosRouteWithChildren = OrcamentosRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ClientesRoute: ClientesRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
+  MotoresRoute: MotoresRoute,
   OrcamentosRoute: OrcamentosRouteWithChildren,
+  ServicosRoute: ServicosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
