@@ -14,7 +14,266 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clientes: {
+        Row: {
+          created_at: string
+          email: string | null
+          empresa: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          empresa?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          empresa?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      configuracoes: {
+        Row: {
+          empresa_cnpj: string | null
+          empresa_email: string | null
+          empresa_endereco: string | null
+          empresa_nome: string | null
+          empresa_telefone: string | null
+          id: string
+          logo_url: string | null
+          rodape: string | null
+          updated_at: string
+        }
+        Insert: {
+          empresa_cnpj?: string | null
+          empresa_email?: string | null
+          empresa_endereco?: string | null
+          empresa_nome?: string | null
+          empresa_telefone?: string | null
+          id?: string
+          logo_url?: string | null
+          rodape?: string | null
+          updated_at?: string
+        }
+        Update: {
+          empresa_cnpj?: string | null
+          empresa_email?: string | null
+          empresa_endereco?: string | null
+          empresa_nome?: string | null
+          empresa_telefone?: string | null
+          id?: string
+          logo_url?: string | null
+          rodape?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      itens_orcamento: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          orcamento_id: string
+          ordem: number
+          quantidade: number
+          servico_id: string | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          orcamento_id: string
+          ordem?: number
+          quantidade?: number
+          servico_id?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          orcamento_id?: string
+          ordem?: number
+          quantidade?: number
+          servico_id?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itens_orcamento_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_orcamento_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      motores: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          frequencia: string | null
+          id: string
+          marca: string | null
+          modelo: string | null
+          observacoes: string | null
+          polos: string | null
+          potencia: string | null
+          rpm: string | null
+          tensao: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          frequencia?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          observacoes?: string | null
+          polos?: string | null
+          potencia?: string | null
+          rpm?: string | null
+          tensao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          frequencia?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          observacoes?: string | null
+          polos?: string | null
+          potencia?: string | null
+          rpm?: string | null
+          tensao?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motores_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamentos: {
+        Row: {
+          cliente_id: string | null
+          cliente_snapshot: Json | null
+          created_at: string
+          desconto: number
+          id: string
+          motor_id: string | null
+          motor_snapshot: Json | null
+          numero: number
+          observacoes: string | null
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          cliente_snapshot?: Json | null
+          created_at?: string
+          desconto?: number
+          id?: string
+          motor_id?: string | null
+          motor_snapshot?: Json | null
+          numero?: number
+          observacoes?: string | null
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          cliente_snapshot?: Json | null
+          created_at?: string
+          desconto?: number
+          id?: string
+          motor_id?: string | null
+          motor_snapshot?: Json | null
+          numero?: number
+          observacoes?: string | null
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orcamentos_motor_id_fkey"
+            columns: ["motor_id"]
+            isOneToOne: false
+            referencedRelation: "motores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servicos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string
+          id: string
+          preco_padrao: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao: string
+          id?: string
+          preco_padrao?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string
+          id?: string
+          preco_padrao?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
