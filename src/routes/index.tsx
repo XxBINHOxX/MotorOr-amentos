@@ -55,9 +55,20 @@ function Dashboard() {
   return (
     <div>
       <header className="border-b border-border bg-surface/40 px-6 py-8 lg:px-10">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">Painel</div>
-        <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">Bom trabalho 👋</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Visão geral do mês corrente e atalhos rápidos.</p>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
+          <div className="min-w-0">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Painel</div>
+            <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">Bom trabalho 👋</h1>
+          </div>
+          <Link
+            to="/orcamentos/novo"
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
+          >
+            <Zap className="h-4 w-4" />
+            Novo Orçamento
+          </Link>
+        </div>
       </header>
 
       <div className="px-6 py-8 lg:px-10 space-y-8">
@@ -66,32 +77,6 @@ function Dashboard() {
           <Stat icon={CheckCircle2} label="Aprovado (mês)" value={brl(data.totalAprovado)} hint={`${data.countAprovado} orçamentos`} accent="bg-success/15 text-success" />
           <Stat icon={Clock} label="Pendente" value={brl(data.totalPendente)} hint={`${data.countPendente} aguardando`} accent="bg-warning/15 text-warning" />
           <Stat icon={Users} label="Clientes" value={String(data.countClientes)} hint="Cadastrados" />
-        </section>
-
-        <section>
-          <h2 className="font-display text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Atalhos</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {tiles.map((t) => {
-              const Icon = t.icon;
-              return (
-                <Link
-                  key={t.to}
-                  to={t.to as any}
-                  className={`group surface-card p-5 transition hover:border-primary/40 hover:-translate-y-0.5 ${t.primary ? "ring-1 ring-primary/40" : ""}`}
-                  style={t.primary ? { background: "var(--gradient-primary)" } : undefined}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className={`grid h-10 w-10 place-items-center rounded-lg ${t.primary ? "bg-white/15 text-primary-foreground" : "bg-accent text-foreground"}`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <TrendingUp className={`h-4 w-4 ${t.primary ? "text-primary-foreground/70" : "text-muted-foreground/50"} group-hover:text-primary`} />
-                  </div>
-                  <div className={`mt-4 font-display text-lg font-semibold ${t.primary ? "text-primary-foreground" : ""}`}>{t.label}</div>
-                  <div className={`mt-1 text-xs ${t.primary ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{t.desc}</div>
-                </Link>
-              );
-            })}
-          </div>
         </section>
       </div>
     </div>
