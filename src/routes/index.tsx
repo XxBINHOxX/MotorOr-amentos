@@ -48,14 +48,6 @@ function Stat({ icon: Icon, label, value, hint, accent }: { icon: any; label: st
   );
 }
 
-const tiles = [
-  { to: "/orcamentos/novo", label: "Novo Orçamento", icon: Plus, primary: true, desc: "Criar um novo orçamento" },
-  { to: "/orcamentos", label: "Histórico", icon: History, desc: "Todos os orçamentos" },
-  { to: "/clientes", label: "Clientes", icon: Users, desc: "Cadastro de clientes" },
-  { to: "/motores", label: "Motores", icon: Cog, desc: "Cadastro de motores" },
-  { to: "/servicos", label: "Serviços", icon: Wrench, desc: "Catálogo e preços" },
-  { to: "/configuracoes", label: "Configurações", icon: Settings, desc: "Dados da empresa" },
-];
 
 function Dashboard() {
   const { data } = useSuspenseQuery({ queryKey: ["dashboard-stats"], queryFn: loadStats });
