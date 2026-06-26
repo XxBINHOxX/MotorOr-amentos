@@ -1,83 +1,101 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { FileText, Users, Clock, CheckCircle2, Zap } from "lucide-react";
-import { brl } from "@/lib/format";
+import { Search, Zap } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  StatCard,
+  DraftOrcamentoCard,
+  ChartCard,
+  ActivityCard,
+  ServicesCard,
+  FinancialCard,
+  NewOrcamentoCard,
+  HistoryTable,
+} from "@/components/dashboard";
+import {
+  kpiData,
+  chartData,
+  recentActivities,
+  topServices,
+  financialSummary,
+  draftOrcamento,
+  orcamentoHistory,
+  greeting,
+} from "@/lib/mock-dashboard-data";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-async function loadStats() {
-  const startMonth = new Date();
-  startMonth.setDate(1);
-  startMonth.setHours(0, 0, 0, 0);
-
-  const [orcMes, aprovados, pendentes, clientes] = await Promise.all([
-    supabase.from("orcamentos").select("id,total,status,created_at").gte("created_at", startMonth.toISOString()),
-    supabase.from("orcamentos").select("id,total", { count: "exact" }).eq("status", "aprovado").gte("created_at", startMonth.toISOString()),
-    supabase.from("orcamentos").select("id,total", { count: "exact" }).eq("status", "pendente"),
-    supabase.from("clientes").select("id", { count: "exact", head: true }),
-  ]);
-  const totalMes = (orcMes.data ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0);
-  const totalAprovado = (aprovados.data ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0);
-  const totalPendente = (pendentes.data ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0);
-  return {
-    countMes: orcMes.data?.length ?? 0,
-    totalMes,
-    countAprovado: aprovados.data?.length ?? 0,
-    totalAprovado,
-    countPendente: pendentes.data?.length ?? 0,
-    totalPendente,
-    countClientes: clientes.count ?? 0,
-  };
-}
-
-function Stat({ icon: Icon, label, value, hint, accent }: { icon: any; label: string; value: string; hint?: string; accent?: string }) {
-  return (
-    <div className="surface-card p-5">
-      <div className="flex items-center justify-between">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-        <div className={`grid h-9 w-9 place-items-center rounded-lg ${accent ?? "bg-accent"}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </div>
-      <div className="mt-3 font-display text-2xl font-semibold">{value}</div>
-      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
-    </div>
-  );
-}
-
-
 function Dashboard() {
-  const { data } = useSuspenseQuery({ queryKey: ["dashboard-stats"], queryFn: loadStats });
-
   return (
-    <div>
-      <header className="border-b border-border bg-surface/40 px-6 py-8 lg:px-10">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4">
-          <div className="min-w-0">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Painel</div>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">Bom trabalho 👋</h1>
+    <div className="min-h-screen pb-20 lg:pb-0">
+      {/* Header */}
+      <header className="border-b border-border bg-surface/40 px-6 py-6 lg:px-10">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
+                {greeting()}, João! 👋
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Aqui está o resumo da sua operação hoje.
+              </p>
+            </div>
+            <Link
+              to="/orcamentos/novo"
+              className="hidden lg:inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #005CAB, #003366)" }}
+            >
+              <Zap className="h-4 w-4" />
+              Novo Orçamento
+            </Link>
           </div>
-          <Link
-            to="/orcamentos/novo"
-            className="inline-flex shrink-0 items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-            style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
-          >
-            <Zap className="h-4 w-4" />
-            Novo Orçamento
-          </Link>
+          <div className="relative max-w-xl">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar cliente, orçamento, motor, serviço..."
+              className="pl-9 pr-20 bg-input/40 border-border/40 h-11"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-muted-foreground bg-surface-elevated px-2 py-1 rounded border border-border/40">
+              <kbd className="font-mono">Ctrl</kbd>
+              <span>+</span>
+              <kbd className="font-mono">K</kbd>
+            </div>
+          </div>
         </div>
       </header>
 
-      <div className="px-6 py-8 lg:px-10 space-y-8">
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat icon={FileText} label="Orçamentos no mês" value={String(data.countMes)} hint={brl(data.totalMes)} />
-          <Stat icon={CheckCircle2} label="Aprovado (mês)" value={brl(data.totalAprovado)} hint={`${data.countAprovado} orçamentos`} accent="bg-success/15 text-success" />
-          <Stat icon={Clock} label="Pendente" value={brl(data.totalPendente)} hint={`${data.countPendente} aguardando`} accent="bg-warning/15 text-warning" />
-          <Stat icon={Users} label="Clientes" value={String(data.countClientes)} hint="Cadastrados" />
-        </section>
+      <div className="px-6 py-6 lg:px-10 space-y-6">
+        {/* KPI Row - 5 cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {kpiData.map((kpi, idx) => (
+            <StatCard
+              key={idx}
+              label={kpi.label}
+              value={kpi.value}
+              variation={kpi.variation}
+              icon={kpi.icon}
+              color={kpi.color}
+            />
+          ))}
+        </div>
+
+        {/* Second Row - 3 columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:[&>*:first-child]:w-full lg:[&>*:first-child]:max-w-[320px]">
+          <DraftOrcamentoCard data={draftOrcamento} />
+          <ChartCard data={chartData} />
+          <ActivityCard activities={recentActivities} />
+        </div>
+
+        {/* Third Row - 3 columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <ServicesCard services={topServices} />
+          <FinancialCard data={financialSummary} />
+          <NewOrcamentoCard />
+        </div>
+
+        {/* History Table */}
+        <HistoryTable data={orcamentoHistory} />
       </div>
     </div>
   );

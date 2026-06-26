@@ -104,22 +104,22 @@ const navItems: NavItem[] = [
 function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-surface/60 backdrop-blur">
+    <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-surface">
       <div className="flex items-center gap-2 px-6 py-5 border-b border-border">
-        <div className="grid h-9 w-9 place-items-center rounded-lg" style={{ background: "var(--gradient-primary)" }}>
-          <Zap className="h-5 w-5 text-primary-foreground" />
+        <div className="grid h-10 w-10 place-items-center rounded-xl" style={{ background: "linear-gradient(135deg, #005CAB, #003366)" }}>
+          <Zap className="h-5 w-5 text-white" />
         </div>
         <div>
-          <div className="font-display text-base font-semibold leading-tight">MotorPro</div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Orçamentos</div>
+          <div className="font-display text-base font-bold leading-tight text-foreground">MotorPro</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Orçamentos</div>
         </div>
       </div>
 
       <div className="px-3 py-4">
         <Link
           to="/orcamentos/novo"
-          className="flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-          style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
+          className="flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 shadow-lg"
+          style={{ background: "linear-gradient(135deg, #005CAB, #003366)", boxShadow: "0 4px 12px -2px rgba(0, 92, 171, 0.4)" }}
         >
           <Plus className="h-4 w-4" />
           Novo Orçamento
@@ -134,10 +134,10 @@ function Sidebar() {
             <Link
               key={item.to}
               to={item.to}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
                 active
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  ? "bg-primary text-white font-medium"
+                  : "text-muted-foreground hover:bg-surface-elevated hover:text-foreground"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -147,8 +147,16 @@ function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-border p-4 text-[11px] text-muted-foreground">
-        v1.0 · Sistema interno
+      <div className="border-t border-border p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/20 text-primary font-semibold text-sm">
+            JS
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-foreground truncate">João Silva</div>
+            <div className="text-xs text-muted-foreground">Administrador</div>
+          </div>
+        </div>
       </div>
     </aside>
   );
@@ -157,15 +165,23 @@ function Sidebar() {
 function MobileNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-surface/95 backdrop-blur">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-surface backdrop-blur-xl">
       <div className="grid grid-cols-6">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
           return (
-            <Link key={item.to} to={item.to} className={`flex flex-col items-center gap-1 py-2 text-[10px] ${active ? "text-primary" : "text-muted-foreground"}`}>
-              <Icon className="h-4 w-4" />
-              <span className="truncate max-w-[60px]">{item.label}</span>
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`flex flex-col items-center gap-1 py-3 text-[10px] transition ${
+                active
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+              <span className="truncate max-w-[60px] font-medium">{item.label}</span>
             </Link>
           );
         })}
