@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicosRouteImport } from './routes/servicos'
 import { Route as OrcamentosRouteImport } from './routes/orcamentos'
 import { Route as MotoresRouteImport } from './routes/motores'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as IndexRouteImport } from './routes/index'
@@ -32,6 +33,11 @@ const OrcamentosRoute = OrcamentosRouteImport.update({
 const MotoresRoute = MotoresRouteImport.update({
   id: '/motores',
   path: '/motores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/login': typeof LoginRoute
   '/motores': typeof MotoresRoute
   '/orcamentos': typeof OrcamentosRouteWithChildren
   '/servicos': typeof ServicosRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/login': typeof LoginRoute
   '/motores': typeof MotoresRoute
   '/servicos': typeof ServicosRoute
   '/orcamentos/$id': typeof OrcamentosIdRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/clientes': typeof ClientesRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/login': typeof LoginRoute
   '/motores': typeof MotoresRoute
   '/orcamentos': typeof OrcamentosRouteWithChildren
   '/servicos': typeof ServicosRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clientes'
     | '/configuracoes'
+    | '/login'
     | '/motores'
     | '/orcamentos'
     | '/servicos'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clientes'
     | '/configuracoes'
+    | '/login'
     | '/motores'
     | '/servicos'
     | '/orcamentos/$id'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/clientes'
     | '/configuracoes'
+    | '/login'
     | '/motores'
     | '/orcamentos'
     | '/servicos'
@@ -137,6 +149,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClientesRoute: typeof ClientesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
+  LoginRoute: typeof LoginRoute
   MotoresRoute: typeof MotoresRoute
   OrcamentosRoute: typeof OrcamentosRouteWithChildren
   ServicosRoute: typeof ServicosRoute
@@ -163,6 +176,13 @@ declare module '@tanstack/react-router' {
       path: '/motores'
       fullPath: '/motores'
       preLoaderRoute: typeof MotoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes': {
@@ -230,6 +250,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClientesRoute: ClientesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
+  LoginRoute: LoginRoute,
   MotoresRoute: MotoresRoute,
   OrcamentosRoute: OrcamentosRouteWithChildren,
   ServicosRoute: ServicosRoute,

@@ -7,22 +7,15 @@ import {
   useRouterState,
   HeadContent,
   Scripts,
+  useNavigate,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import {
-  LayoutDashboard,
-  FileText,
-  Users,
-  Cog,
-  Wrench,
-  Settings,
-  Plus,
-  Zap,
-} from "lucide-react";
+import { LayoutDashboard, FileText, Users, Cog, Wrench, Settings, Plus, Zap, LogOut, Loader as Loader2 } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 
 function NotFoundComponent() {
   return (
@@ -103,6 +96,22 @@ const navItems: NavItem[] = [
 
 function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const userEmail = user?.email ?? "Usuário";
+  const initials = userEmail
+    .split("@")[0]
+    .split(/[._-]/)
+    .map((s) => s[0]?.toUpperCase())
+    .slice(0, 2)
+    .join("") || "U";
+
+  async function handleSignOut() {
+    await signOut();
+    navigate({ to: "/login" });
+  }
+
   return (
     <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-surface">
       <div className="flex items-center gap-2 px-6 py-5 border-b border-border">
@@ -150,12 +159,19 @@ function Sidebar() {
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/20 text-primary font-semibold text-sm">
-            JS
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-foreground truncate">João Silva</div>
-            <div className="text-xs text-muted-foreground">Administrador</div>
+            <div className="text-sm font-medium text-foreground truncate">{userEmail}</div>
+            <div className="text-xs text-muted-foreground">Autenticado</div>
           </div>
+          <button
+            onClick={handleSignOut}
+            className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/15 hover:text-destructive transition-colors"
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </aside>
@@ -190,19 +206,62 @@ function MobileNav() {
   );
 }
 
+function AuthGuard({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    if (!loading && !user && pathname !== "/login") {
+      navigate({ to: "/login" });
+    }
+  }, [user, loading, pathname, navigate]);
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // For login page, just render without sidebar
+  if (pathname === "/login") {
+    return <>{children}</>;
+  }
+
+  // Redirect to login if not authenticated (will happen via effect)
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex w-full">
+      <Sidebar />
+      <main className="flex-1 min-w-0 pb-20 lg:pb-0">
+        {children}
+      </main>
+      <MobileNav />
+    </div>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen flex w-full">
-        <Sidebar />
-        <main className="flex-1 min-w-0 pb-20 lg:pb-0">
+      <AuthProvider>
+        <AuthGuard>
           <Outlet />
-        </main>
-        <MobileNav />
-      </div>
-      <Toaster theme="dark" />
+        </AuthGuard>
+        <Toaster theme="dark" />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
