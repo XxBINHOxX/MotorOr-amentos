@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Users, Plus, Clock, CheckCircle2, Zap } from "lucide-react";
+import { FileText, Users, Clock, CheckCircle2, Zap } from "lucide-react";
 import { brl } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
