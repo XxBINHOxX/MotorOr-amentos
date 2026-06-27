@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { brl } from "@/lib/format";
-import type { FinancialSummary } from "@/lib/mock-dashboard-data";
+import type { FinancialSummary } from "@/hooks/useDashboardStats";
 
 interface FinancialCardProps {
   data: FinancialSummary;

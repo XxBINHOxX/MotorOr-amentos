@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search, Zap } from "lucide-react";
+import { Search, Zap, Loader as Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   StatCard,
@@ -11,22 +11,72 @@ import {
   NewOrcamentoCard,
   HistoryTable,
 } from "@/components/dashboard";
-import {
-  kpiData,
-  chartData,
-  recentActivities,
-  topServices,
-  financialSummary,
-  draftOrcamento,
-  orcamentoHistory,
-  greeting,
-} from "@/lib/mock-dashboard-data";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useAuth } from "@/lib/auth-context";
+
+// Keep mock imports as reference (commented)
+// import { draftOrcamento as mockDraft } from "@/lib/mock-dashboard-data";
+
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
 function Dashboard() {
+  const { data: stats, isLoading, error } = useDashboardStats();
+  const { user } = useAuth();
+
+  const userName = user?.email?.split("@")[0] || "Usuário";
+  const capitalizedUserName = userName.charAt(0).toUpperCase() + userName.slice(1);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-destructive font-medium">Erro ao carregar dados do dashboard</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            {(error as Error).message}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Default values if no data
+  const kpis = stats?.kpis || [
+    { label: "Orçamentos no Mês", value: 0, variation: 0, icon: "file-text", color: "primary" },
+    { label: "Valor Total Orçado", value: 0, variation: 0, icon: "dollar-sign", color: "primary" },
+    { label: "Aprovados", value: 0, variation: 0, icon: "check-circle", color: "success" },
+    { label: "Em Análise", value: 0, variation: 0, icon: "clock", color: "warning" },
+    { label: "Rejeitados", value: 0, variation: 0, icon: "x-circle", color: "destructive" },
+  ];
+  const chartData = stats?.chartData || [{ day: 1, approved: 0, total: 0 }];
+  const activities = stats?.activities || [];
+  const topServices = stats?.topServices || [];
+  const financial = stats?.financial || {
+    totalOrcado: 0,
+    valorAprovado: 0,
+    valorEmAnalise: 0,
+    valorRejeitado: 0,
+    taxaAprovacao: 0,
+  };
+  const draft = stats?.draft;
+  const history = stats?.history || [];
+
   return (
     <div className="min-h-screen pb-20 lg:pb-0">
       {/* Header */}
@@ -35,7 +85,7 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-display text-2xl lg:text-3xl font-bold text-foreground">
-                {greeting()}, João! 👋
+                {greeting()}, {capitalizedUserName}!
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 Aqui está o resumo da sua operação hoje.
@@ -68,7 +118,7 @@ function Dashboard() {
       <div className="px-6 py-6 lg:px-10 space-y-6">
         {/* KPI Row - 5 cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {kpiData.map((kpi, idx) => (
+          {kpis.map((kpi, idx) => (
             <StatCard
               key={idx}
               label={kpi.label}
@@ -82,21 +132,39 @@ function Dashboard() {
 
         {/* Second Row - 3 columns */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:[&>*:first-child]:w-full lg:[&>*:first-child]:max-w-[320px]">
-          <DraftOrcamentoCard data={draftOrcamento} />
+          {draft ? (
+            <DraftOrcamentoCard data={draft} />
+          ) : (
+            <div className="surface-card p-6 flex flex-col items-center justify-center h-full text-center">
+              <FileText className="h-12 w-12 text-muted-foreground/50 mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Nenhum orçamento em rascunho
+              </p>
+              <Link
+                to="/orcamentos/novo"
+                className="mt-4 text-sm text-primary hover:underline"
+              >
+                Criar novo orçamento
+              </Link>
+            </div>
+          )}
           <ChartCard data={chartData} />
-          <ActivityCard activities={recentActivities} />
+          <ActivityCard activities={activities} />
         </div>
 
         {/* Third Row - 3 columns */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <ServicesCard services={topServices} />
-          <FinancialCard data={financialSummary} />
+          <FinancialCard data={financial} />
           <NewOrcamentoCard />
         </div>
 
         {/* History Table */}
-        <HistoryTable data={orcamentoHistory} />
+        <HistoryTable data={history} />
       </div>
     </div>
   );
 }
+
+// Import for the empty state icon
+import { FileText } from "lucide-react";

@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ActivityItem } from "@/lib/mock-dashboard-data";
+import type { ActivityItem } from "@/hooks/useDashboardStats";
 
 interface ActivityCardProps {
   activities: ActivityItem[];

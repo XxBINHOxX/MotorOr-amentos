@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link } from "@tanstack/react-router";
 import { brl, dateBR } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { OrcamentoHistory } from "@/lib/mock-dashboard-data";
+import type { OrcamentoHistory } from "@/hooks/useDashboardStats";
 
 interface HistoryTableProps {
   data: OrcamentoHistory[];

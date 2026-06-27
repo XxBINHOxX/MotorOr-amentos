@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { ServiceRank } from "@/lib/mock-dashboard-data";
+import type { ServiceRank } from "@/hooks/useDashboardStats";
 
 interface ServicesCardProps {
   services: ServiceRank[];

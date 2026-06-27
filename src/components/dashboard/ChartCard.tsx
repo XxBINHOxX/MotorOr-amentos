@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ChartDataPoint } from "@/lib/mock-dashboard-data";
+import type { ChartDataPoint } from "@/hooks/useDashboardStats";
 
 interface ChartCardProps {
   data: ChartDataPoint[];
