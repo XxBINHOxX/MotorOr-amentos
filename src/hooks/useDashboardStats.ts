@@ -55,7 +55,7 @@ export interface OrcamentoHistory {
   cliente: string;
   data: string;
   valor: number;
-  status: "aprovado" | "pendente" | "cancelado";
+  status: "aprovado" | "pendente" | "cancelado" | "rascunho";
 }
 
 export interface DashboardStats {
@@ -93,7 +93,7 @@ function statusToAction(status: string): ActivityItem["action"] {
 // Helper to map history status (recusado -> cancelado for display)
 function mapHistoryStatus(status: string): OrcamentoHistory["status"] {
   if (status === "recusado") return "cancelado";
-  if (status === "rascunho") return "pendente";
+  if (status === "rascunho") return "rascunho";
   return status as OrcamentoHistory["status"];
 }
 
@@ -105,60 +105,75 @@ export function useDashboardStats() {
       const currentMonth = getMonthBounds(now);
       const prevMonth = getMonthBounds(subMonths(now, 1));
 
-      // 1. Fetch orcamentos from current and previous month
-      const { data: orcamentosCurrent, error: err1 } = await supabase
-        .from("orcamentos")
-        .select("id, numero, status, total, created_at, updated_at, cliente_snapshot, cliente_id")
-        .gte("created_at", currentMonth.start.toISOString())
-        .lte("created_at", currentMonth.end.toISOString())
-        .order("updated_at", { ascending: false });
+      // Run all independent queries in parallel
+      const [
+        orcamentosCurrentRes,
+        orcamentosPrevRes,
+        recentOrcamentosRes,
+        draftDataRes,
+        historyDataRes,
+      ] = await Promise.all([
+        // 1. Fetch orcamentos from current month
+        supabase
+          .from("orcamentos")
+          .select("id, numero, status, total, created_at, updated_at, cliente_snapshot, cliente_id")
+          .gte("created_at", currentMonth.start.toISOString())
+          .lte("created_at", currentMonth.end.toISOString())
+          .order("updated_at", { ascending: false }),
 
-      if (err1) throw err1;
+        // 2. Fetch orcamentos from previous month
+        supabase
+          .from("orcamentos")
+          .select("id, numero, status, total, created_at, updated_at, cliente_snapshot, cliente_id")
+          .gte("created_at", prevMonth.start.toISOString())
+          .lte("created_at", prevMonth.end.toISOString()),
 
-      const { data: orcamentosPrev, error: err2 } = await supabase
-        .from("orcamentos")
-        .select("id, numero, status, total, created_at, updated_at, cliente_snapshot, cliente_id")
-        .gte("created_at", prevMonth.start.toISOString())
-        .lte("created_at", prevMonth.end.toISOString());
+        // 3. Fetch recent activities (last 5)
+        supabase
+          .from("orcamentos")
+          .select("id, numero, status, updated_at, cliente_snapshot, cliente_id")
+          .order("updated_at", { ascending: false })
+          .limit(5),
 
-      if (err2) throw err2;
+        // 4. Fetch draft orcamento (most recent rascunho)
+        supabase
+          .from("orcamentos")
+          .select("id, numero, cliente_snapshot, motor_snapshot, updated_at, cliente_id")
+          .eq("status", "rascunho")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
 
-      // 2. Fetch recent activities (last 5)
-      const { data: recentOrcamentos, error: err3 } = await supabase
-        .from("orcamentos")
-        .select("id, numero, status, updated_at, cliente_snapshot, cliente_id")
-        .order("updated_at", { ascending: false })
-        .limit(5);
+        // 5. Fetch history (all orcamentos for history table)
+        supabase
+          .from("orcamentos")
+          .select("id, numero, status, total, created_at, cliente_snapshot, cliente_id")
+          .order("created_at", { ascending: false }),
+      ]);
 
-      if (err3) throw err3;
+      // Check for errors
+      if (orcamentosCurrentRes.error) throw orcamentosCurrentRes.error;
+      if (orcamentosPrevRes.error) throw orcamentosPrevRes.error;
+      if (recentOrcamentosRes.error) throw recentOrcamentosRes.error;
+      if (draftDataRes.error) throw draftDataRes.error;
+      if (historyDataRes.error) throw historyDataRes.error;
 
-      // 3. Fetch draft orcamento (most recent rascunho)
-      const { data: draftData, error: err4 } = await supabase
-        .from("orcamentos")
-        .select("id, numero, cliente_snapshot, motor_snapshot, updated_at, cliente_id")
-        .eq("status", "rascunho")
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const orcamentosCurrent = orcamentosCurrentRes.data;
+      const orcamentosPrev = orcamentosPrevRes.data;
+      const recentOrcamentos = recentOrcamentosRes.data;
+      const draftData = draftDataRes.data;
+      const historyData = historyDataRes.data;
 
-      if (err4) throw err4;
-
-      // 4. Fetch itens_orcamento for service aggregation
-      const { data: itensCurrent, error: err5 } = await supabase
-        .from("itens_orcamento")
-        .select("servico_id, descricao, orcamento_id")
-        .in("orcamento_id", orcamentosCurrent?.map(o => o.id) || []);
-
-      if (err5) throw err5;
-
-      // 5. Fetch history (paginated list)
-      const { data: historyData, error: err6 } = await supabase
-        .from("orcamentos")
-        .select("id, numero, status, total, created_at, cliente_snapshot, cliente_id")
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (err6) throw err6;
+      // 4. Fetch itens_orcamento for service aggregation (depends on orcamentosCurrent)
+      let itensCurrent: { servico_id: string | null; descricao: string; orcamento_id: string }[] = [];
+      if (orcamentosCurrent && orcamentosCurrent.length > 0) {
+        const { data: itensData, error: err5 } = await supabase
+          .from("itens_orcamento")
+          .select("servico_id, descricao, orcamento_id")
+          .in("orcamento_id", orcamentosCurrent.map(o => o.id));
+        if (err5) throw err5;
+        itensCurrent = itensData || [];
+      }
 
       // Get unique cliente_ids to fetch client names
       const clienteIds = new Set<string>();
@@ -200,8 +215,9 @@ export function useDashboardStats() {
       const prevAprovado = orcamentosPrev?.filter(o => o.status === "aprovado").reduce((sum, o) => sum + (o.total || 0), 0) || 0;
       const aprovadoVariation = prevAprovado > 0 ? ((currentAprovado - prevAprovado) / prevAprovado) * 100 : 0;
 
-      const currentPendente = orcamentosCurrent?.filter(o => o.status === "pendente" || o.status === "rascunho").reduce((sum, o) => sum + (o.total || 0), 0) || 0;
-      const prevPendente = orcamentosPrev?.filter(o => o.status === "pendente" || o.status === "rascunho").reduce((sum, o) => sum + (o.total || 0), 0) || 0;
+      // "Em Análise" considers only status "pendente" (rascunho is a draft still being created)
+      const currentPendente = orcamentosCurrent?.filter(o => o.status === "pendente").reduce((sum, o) => sum + (o.total || 0), 0) || 0;
+      const prevPendente = orcamentosPrev?.filter(o => o.status === "pendente").reduce((sum, o) => sum + (o.total || 0), 0) || 0;
       const pendenteVariation = prevPendente > 0 ? ((currentPendente - prevPendente) / prevPendente) * 100 : 0;
 
       const currentRejeitado = orcamentosCurrent?.filter(o => o.status === "recusado").reduce((sum, o) => sum + (o.total || 0), 0) || 0;

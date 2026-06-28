@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,20 +7,100 @@ import { Link } from "@tanstack/react-router";
 import { brl, dateBR } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { OrcamentoHistory } from "@/hooks/useDashboardStats";
+import { parseISO, isWithinInterval, startOfMonth, endOfMonth, subMonths } from "date-fns";
 
 interface HistoryTableProps {
   data: OrcamentoHistory[];
 }
 
+const PAGE_SIZE = 10;
+
 const statusStyles: Record<OrcamentoHistory["status"], { label: string; class: string }> = {
   aprovado: { label: "Aprovado", class: "bg-success/15 text-success border-success/30" },
   pendente: { label: "Pendente", class: "bg-warning/15 text-warning border-warning/30" },
   cancelado: { label: "Cancelado", class: "bg-destructive/15 text-destructive border-destructive/30" },
+  rascunho: { label: "Rascunho", class: "bg-muted/15 text-muted-foreground border-muted/30" },
 };
 
 export function HistoryTable({ data }: HistoryTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 5;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [periodFilter, setPeriodFilter] = useState("este-mes");
+
+  // Get period boundaries
+  const now = new Date();
+  const getPeriodBounds = (period: string) => {
+    switch (period) {
+      case "este-mes":
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "mes-anterior":
+        const prevMonth = subMonths(now, 1);
+        return { start: startOfMonth(prevMonth), end: endOfMonth(prevMonth) };
+      case "ultimos-3":
+        return { start: startOfMonth(subMonths(now, 2)), end: endOfMonth(now) };
+      default:
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+    }
+  };
+
+  // Filter data based on search, status, and period
+  const filteredData = useMemo(() => {
+    const periodBounds = getPeriodBounds(periodFilter);
+
+    return data.filter((item) => {
+      // Search filter: match numero or cliente name
+      const matchesSearch = searchTerm === "" ||
+        item.numero.toString().includes(searchTerm) ||
+        item.cliente.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Status filter
+      const matchesStatus = statusFilter === "todos" || item.status === statusFilter;
+
+      // Period filter
+      const itemDate = parseISO(item.data);
+      const matchesPeriod = isWithinInterval(itemDate, periodBounds);
+
+      return matchesSearch && matchesStatus && matchesPeriod;
+    });
+  }, [data, searchTerm, statusFilter, periodFilter]);
+
+  // Calculate pagination
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
+  const currentData = filteredData.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  // Reset page when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handlePeriodChange = (value: string) => {
+    setPeriodFilter(value);
+    setCurrentPage(1);
+  };
+
+  // Generate page numbers to display (show max 5 pages around current)
+  const getPageNumbers = () => {
+    const pages: number[] = [];
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, startPage + 4);
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  const startItem = (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = Math.min(currentPage * PAGE_SIZE, filteredData.length);
 
   return (
     <div className="surface-card overflow-hidden">
@@ -36,9 +116,11 @@ export function HistoryTable({ data }: HistoryTableProps) {
             <Input
               placeholder="Pesquisar..."
               className="pl-9 bg-input/40 border-border/40"
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
-          <Select defaultValue="todos">
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
             <SelectTrigger className="w-40 bg-input/40 border-border/40">
               <SelectValue placeholder="Todos os status" />
             </SelectTrigger>
@@ -46,10 +128,11 @@ export function HistoryTable({ data }: HistoryTableProps) {
               <SelectItem value="todos">Todos os status</SelectItem>
               <SelectItem value="aprovado">Aprovado</SelectItem>
               <SelectItem value="pendente">Pendente</SelectItem>
+              <SelectItem value="rascunho">Rascunho</SelectItem>
               <SelectItem value="cancelado">Cancelado</SelectItem>
             </SelectContent>
           </Select>
-          <Select defaultValue="este-mes">
+          <Select value={periodFilter} onValueChange={handlePeriodChange}>
             <SelectTrigger className="w-36 bg-input/40 border-border/40">
               <SelectValue placeholder="Este mês" />
             </SelectTrigger>
@@ -75,49 +158,59 @@ export function HistoryTable({ data }: HistoryTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40">
-            {data.map((item) => {
-              const status = statusStyles[item.status];
-              return (
-                <tr key={item.id} className="hover:bg-surface-elevated/40 transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs text-foreground">
-                    #{item.numero}
-                  </td>
-                  <td className="px-4 py-3 text-foreground font-medium truncate max-w-[200px]">
-                    {item.cliente}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {dateBR(item.data)}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-foreground">
-                    {brl(item.valor)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn(
-                      "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
-                      status.class
-                    )}>
-                      {status.label}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Link
-                      to="/orcamentos/$id"
-                      params={{ id: item.id }}
-                      className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
+            {currentData.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  Nenhum orçamento encontrado
+                </td>
+              </tr>
+            ) : (
+              currentData.map((item) => {
+                const status = statusStyles[item.status];
+                return (
+                  <tr key={item.id} className="hover:bg-surface-elevated/40 transition-colors">
+                    <td className="px-4 py-3 font-mono text-xs text-foreground">
+                      #{item.numero}
+                    </td>
+                    <td className="px-4 py-3 text-foreground font-medium truncate max-w-[200px]">
+                      {item.cliente}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {dateBR(item.data)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-foreground">
+                      {brl(item.valor)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn(
+                        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                        status.class
+                      )}>
+                        {status.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Link
+                        to="/orcamentos/$id"
+                        params={{ id: item.id }}
+                        className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-border/40">
         <p className="text-xs text-muted-foreground">
-          Mostrando {data.length} de {data.length} resultados
+          {filteredData.length > 0
+            ? `Mostrando ${startItem}-${endItem} de ${filteredData.length} resultados`
+            : "Nenhum resultado"}
         </p>
         <div className="flex items-center gap-1">
           <Button
@@ -129,7 +222,7 @@ export function HistoryTable({ data }: HistoryTableProps) {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((page) => (
+          {getPageNumbers().map((page) => (
             <Button
               key={page}
               variant={page === currentPage ? "default" : "outline"}
