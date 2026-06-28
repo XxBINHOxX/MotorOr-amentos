@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval, parseISO, formatDistanceToNow } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { OrcamentoHistory, mapHistoryStatus, getClientName } from "@/lib/orcamentos-helpers";
+
+// Re-export OrcamentoHistory for other components
+export type { OrcamentoHistory } from "@/lib/orcamentos-helpers";
 
 // Types matching the mock data structures
 export interface KPIData {
@@ -49,15 +53,6 @@ export interface DraftOrcamento {
   lastEdit: string;
 }
 
-export interface OrcamentoHistory {
-  id: string;
-  numero: number;
-  cliente: string;
-  data: string;
-  valor: number;
-  status: "aprovado" | "pendente" | "cancelado" | "rascunho";
-}
-
 export interface DashboardStats {
   kpis: KPIData[];
   chartData: ChartDataPoint[];
@@ -88,13 +83,6 @@ function statusToAction(status: string): ActivityItem["action"] {
     default:
       return "criado";
   }
-}
-
-// Helper to map history status (recusado -> cancelado for display)
-function mapHistoryStatus(status: string): OrcamentoHistory["status"] {
-  if (status === "recusado") return "cancelado";
-  if (status === "rascunho") return "rascunho";
-  return status as OrcamentoHistory["status"];
 }
 
 export function useDashboardStats() {
@@ -191,15 +179,9 @@ export function useDashboardStats() {
         clientes = Object.fromEntries((clientesData || []).map(c => [c.id, c.nome]));
       }
 
-      // Helper to get client name
-      const getClientName = (item: { cliente_id?: string | null; cliente_snapshot?: unknown } | null): string => {
-        if (!item) return "Cliente não informado";
-        if (item.cliente_id && clientes[item.cliente_id]) return clientes[item.cliente_id];
-        if (item.cliente_snapshot && typeof item.cliente_snapshot === "object" && item.cliente_snapshot !== null) {
-          const snapshot = item.cliente_snapshot as Record<string, unknown>;
-          return (snapshot.nome as string) || (snapshot.empresa as string) || "Cliente não informado";
-        }
-        return "Cliente não informado";
+      // Helper to get client name with local clientes map
+      const getClientNameLocal = (item: { cliente_id?: string | null; cliente_snapshot?: unknown } | null): string => {
+        return getClientName(item, clientes);
       };
 
       // Calculate KPIs
@@ -253,7 +235,7 @@ export function useDashboardStats() {
       const activities: ActivityItem[] = (recentOrcamentos || []).map(o => ({
         id: o.id,
         numero: o.numero,
-        cliente: getClientName(o),
+        cliente: getClientNameLocal(o),
         action: statusToAction(o.status),
         timeAgo: formatDistanceToNow(parseISO(o.updated_at), { addSuffix: true, locale: ptBR }),
       }));
@@ -302,7 +284,7 @@ export function useDashboardStats() {
           : "Motor não informado";
         draft = {
           numero: draftData.numero,
-          cliente: getClientName(draftData),
+          cliente: getClientNameLocal(draftData),
           motor: motorStr,
           progress: 50, // Default progress for drafts
           lastEdit: formatDistanceToNow(parseISO(draftData.updated_at), { addSuffix: true, locale: ptBR }),
@@ -313,7 +295,7 @@ export function useDashboardStats() {
       const history: OrcamentoHistory[] = (historyData || []).map(o => ({
         id: o.id,
         numero: o.numero,
-        cliente: getClientName(o),
+        cliente: getClientNameLocal(o),
         data: format(parseISO(o.created_at), "yyyy-MM-dd"),
         valor: o.total || 0,
         status: mapHistoryStatus(o.status),

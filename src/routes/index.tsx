@@ -160,7 +160,7 @@ function Dashboard() {
         </div>
 
         {/* History Table */}
-        <HistoryTable data={history} />
+        <HistoryTable />
       </div>
     </div>
   );
